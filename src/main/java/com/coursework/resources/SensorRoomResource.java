@@ -65,4 +65,10 @@ public class SensorRoomResource {
         DataRepository.rooms.remove(roomId);
         return Response.noContent().build();
     }
+    @GET
+    @Path("/crash")
+    public Response triggerCrash() {
+        // This simulates a random, unexpected server failure
+        throw new RuntimeException("Simulated catastrophic failure!");
+    }
 }
