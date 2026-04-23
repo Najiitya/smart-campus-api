@@ -28,7 +28,7 @@ Below are five sample commands demonstrating how to interact with the API:
 curl -X GET http://localhost:8080/api/v1/
 
 
-*Part 1: Service Architecture & Setup
+* Part 1: Service Architecture & Setup
 *Question: In your report, explain the default lifecycle of a JAX-RS Resource class. Is a new instance instantiated for every incoming request, or does the runtime treat it as a singleton? Elaborate on how this architectural decision impacts the way you manage and synchronize your in-memory data structures (maps/lists) to prevent data loss or race conditions
 *•	Answer: The way JAX-RS works by default is that it thinks of Resource classes as something that is made for each request. So when a new HTTP request comes in JAX-RS makes an instance of the class like RoomResource and gets rid of it as soon as it sends a response. This means we cannot save our data in the way like in a private Map called rooms because each time a new request comes in the data will be gone. Since we do not have a database we have to use static memory like a public static Map called rooms inside a class called DataRepository to keep our data safe and make sure it is still there when we need it again. This is how we can keep our data from being lost and make sure JAX-RS and RoomResource remember things, over requests.
 *
