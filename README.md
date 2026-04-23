@@ -1,62 +1,151 @@
 # Smart Campus Sensor & Room Management API
 
-## 1. API Overview
-The Smart Campus API is a robust, lightweight RESTful web service built using Java and JAX-RS (Jersey). It is designed to manage university infrastructure by tracking Rooms and the various IoT Sensors (such as CO2 monitors and temperature gauges) deployed within them. The API utilizes an in-memory data structure for fast read/write operations and is deployed via an embedded Grizzly HTTP server. Key features include resource nesting (sub-resources for sensor readings), query parameter filtering, and a comprehensive suite of custom exception mappers to ensure a leak-proof, secure system architecture.
+> A RESTful web service for managing university IoT infrastructure — rooms, sensors, and readings.
 
-## 2. Build and Launch Instructions
-To build and run this project locally, please follow these steps:
+---
 
-**Prerequisites:** * Java JDK 11 or higher installed.
-* Apache Maven installed.
-* An IDE such as Apache NetBeans.
+## Table of Contents
 
-**Steps to Launch:**
+1. [Overview](#overview)
+2. [Build & Launch](#build--launch)
+3. [Sample cURL](#sample-curl)
+4. [Report Q&A](#report-qa)
+   - [Part 1 — Service Architecture & Setup](#part-1--service-architecture--setup)
+   - [Part 2 — Room Management](#part-2--room-management)
+   - [Part 3 — Sensor Operations & Linking](#part-3--sensor-operations--linking)
+   - [Part 4 — Deep Nesting with Sub-Resources](#part-4--deep-nesting-with-sub-resources)
+   - [Part 5 — Error Handling, Exception Mapping & Logging](#part-5--error-handling-exception-mapping--logging)
+
+---
+
+## Overview
+
+Built with Java and JAX-RS (Jersey), this API manages university infrastructure by tracking rooms and IoT sensors (CO₂ monitors, temperature gauges). It uses an in-memory data structure for fast operations, deployed via an embedded Grizzly HTTP server.
+
+**Key features:**
+- Resource nesting (sub-resources for sensor readings)
+- Query parameter filtering
+- Custom exception mappers for a secure, leak-proof architecture
+
+---
+
+## Build & Launch
+
+### Prerequisites
+
+- Java JDK 11 or higher
+- Apache Maven
+- IDE such as Apache NetBeans
+
+### Steps
+
 1. Clone the repository to your local machine.
-2. Open the project folder (`CourseWork`) in your IDE.
-3. Perform a clean build to resolve Maven dependencies and package the `jar` file:
-   * In NetBeans: Click **Clean and Build** (or run `mvn clean package` in your terminal).
+2. Open the `CourseWork` project folder in your IDE.
+3. Run a clean build — click **Clean and Build** in NetBeans, or run:
+   ```bash
+   mvn clean package
+   ```
 4. Navigate to `src/main/java/com/coursework/Main.java`.
-5. Run the `Main.java` file. 
-6. The embedded Grizzly server will start. Look for the console message: `SMART CAMPUS SERVER IS RUNNING!`
-7. The base API will be accessible at: `http://localhost:8080/api/v1/`
+5. Run `Main.java`. Look for the console message:
+   ```
+   SMART CAMPUS SERVER IS RUNNING!
+   ```
+6. The base API is now accessible at:
+   ```
+   http://localhost:8080/api/v1/
+   ```
 
-## 3. Sample Interactions (cURL Commands)
-Below are five sample commands demonstrating how to interact with the API:
+---
 
-**1. View API Discovery Metadata:**
+## Sample cURL
+
+**View API Discovery Metadata:**
 ```bash
 curl -X GET http://localhost:8080/api/v1/
+```
 
+---
 
-* Part 1: Service Architecture & Setup
-*Question: In your report, explain the default lifecycle of a JAX-RS Resource class. Is a new instance instantiated for every incoming request, or does the runtime treat it as a singleton? Elaborate on how this architectural decision impacts the way you manage and synchronize your in-memory data structures (maps/lists) to prevent data loss or race conditions
-*•	Answer: The way JAX-RS works by default is that it thinks of Resource classes as something that is made for each request. So when a new HTTP request comes in JAX-RS makes an instance of the class like RoomResource and gets rid of it as soon as it sends a response. This means we cannot save our data in the way like in a private Map called rooms because each time a new request comes in the data will be gone. Since we do not have a database we have to use static memory like a public static Map called rooms inside a class called DataRepository to keep our data safe and make sure it is still there when we need it again. This is how we can keep our data from being lost and make sure JAX-RS and RoomResource remember things, over requests.
-*
-*Question: Why is the provision of "Hypermedia" (links and navigation within responses) considered a hallmark of advanced RESTful design (HATEOAS)? How does this approach benefit client developers compared to static documentation?
-*•	Answer: HATEOAS, or Hypermedia as the Engine of Application State, allows APIs to independently determine actions by providing direct steps in JSON responses. This eliminates the need for developers to consult documentation for URLs. Client applications retrieve links from the Discovery endpoint, ensuring stability even if backend URLs change. This design keeps the client and server decoupled, enhancing flexibility and adaptability. By presenting URLs in responses, HATEOAS facilitates easier API updates and creates a more dynamic, manageable system for developers.
-*
-*Part 2: Room Management
-*Question: When returning a list of rooms, what are the implications of returning only IDs versus returning the full room objects? Consider network bandwidth and client side processing.
-*•	Answer: When the server returns only IDs, data size is reduced, leading to lower network traffic and quicker initial API responses. However, the client must send additional requests to gather full room information. Conversely, when the server sends complete room details, it uses more bandwidth initially but enhances user experience by providing all necessary data in one trip, making the interface feel faster and improving user satisfaction.
-*
-*Question: Is the DELETE operation idempotent in your implementation? Provide a detailed justification by describing what happens if a client mistakenly sends the exact same DELETE request for a room multiple times
-*•	Answer: In the approach, the DELETE action is indeed ineffective. When several identical requests have the same impact on the server’s state as a single request, this is known as the ineffectiveness. A 204 No content error is returned by the server when a client submits a DELETE request for Room A. The server simply returns a 404 Not Found because the room is no longer available if the client submits the exact same DELETE request twice or three times. After the first successful deletion, the system's general status doesn't alter.
-*
-*Part 3: Sensor Operations & Linking
-*Question: We explicitly use the @Consumes (MediaType.APPLICATION_JSON) annotation on the POST method. Explain the technical consequences if a client attempts to send data in a different format, such as text/plain or application/xml. How does JAX-RS handle this mismatch?
-*•	Answer: The @Consumes annotation checks incoming requests to ensure they match expected formats. If a client sends data in an incorrect format like text/application/xml, JAX-RS intercepts and rejects the request, returning an HTTP 415 error to inform the client about the unsupported media type.
-*Question: You implemented this filtering using @QueryParam. Contrast this with an alternative design where the type is part of the URL path (e.g., /api/vl/sensors/type/CO2). Why is the query parameter approach generally considered superior for filtering and searching collections?
-*•	Answer: URL routes such as /sensors/123, are used in RESTful design to uniquely identify particular, hierarchical resources. Conversely, query parameters are intended to serve as sorting criteria, filters, or modifiers for a collection. Because filtering is more flexing and optional, using @QueryParam is better. While query parameters enable clients to stack multiple, optional filters in a tidy manner, using paths for filtering would require mapping every possible combination of filters into strict route templates.
-*
-*Part 4: Deep Nesting with Sub-Resources
-*Question: Discuss the architectural benefits of the Sub-Resource Locator pattern. How does delegating logic to separate classes help manage complexity in large APIs compared to defining every nested path (e.g., sensors/{id}/readings/{rid}) in one massive controller class?
-*•	Answer: The Separation of Concerns and Single Responsibility Principles are essential, and the Sub-Resource Locator pattern supports them. To prevent the SensorResource class from becoming unwieldy, we use the SensorReadingResource class for handling readings logic, making the code easier to understand. Having separate classes improves manageability and simplifies maintenance. This pattern also promotes code reuse, eliminating the need to rewrite logic in different application parts. Overall, it keeps the code clean and simple, enhancing developer efficiency and ease of collaboration.
-*
-*Part 5: Advanced Error Handling, Exception Mapping & Logging
-*Question: Why is HTTP 422 often considered more semantically accurate than a standard 404 when the issue is a missing reference inside a valid JSON payload?
-*•	Answer: The HTTP 404 Not Found error indicates that the requested website is unavailable. However, adding a new sensor to (/sensors) functions correctly. The HTTP 422 Unprocessable Entity error signifies that while the target website and format are correct, there are errors in the submitted information, such as using a non-existent Room ID from the database.
-*Question: From a cybersecurity standpoint, explain the risks associated with exposing internal Java stack traces to external API consumers. What specific information could an attacker gather from such a trace?
-*•	Answer: Revealing details of Java program errors exposes sensitive information about your system, potentially allowing unauthorized individuals to access private data. This information can lead to identification of the software versions, system setup, and database in use, enabling malicious actors to pinpoint vulnerabilities. They may exploit known issues related to specific software versions to craft targeted attacks. Thus, caution is necessary when sharing error details to safeguard against potential threats to your system's security.
-*Question: Why is it advantageous to use JAX-RS filters for cross-cutting concerns like logging, rather than manually inserting Logger.info() statements inside every single resource method?
-*•	Answer: JAX-RS filters promote the Don't Repeat Yourself principle by centralizing logging. They simplify the application by automatically logging all requests and responses without cluttering business logic. Filters act as a protective layer that ensures consistent logging formats and separation from application logic, making updates easier and maintaining clean, organized code.
-*
+## Report Q&A
+
+---
+
+### Part 1 — Service Architecture & Setup
+
+---
+
+**Q: What is the default lifecycle of a JAX-RS resource class — per-request or singleton? How does this affect in-memory data management?**
+
+By default, JAX-RS creates a new instance of each resource class (e.g. `RoomResource`) for every incoming HTTP request and discards it once the response is sent. This means instance-level fields cannot hold state between requests. To preserve data without a database, a static structure like a `public static Map` inside a `DataRepository` class must be used — this persists across requests regardless of how many resource instances are created.
+
+---
+
+**Q: Why is HATEOAS considered a hallmark of advanced REST design, and how does it benefit client developers over static documentation?**
+
+HATEOAS (Hypermedia as the Engine of Application State) embeds navigable links directly in API responses, so clients can discover next actions without consulting external docs. Even if backend URLs change, clients remain stable by following links from the discovery endpoint. This keeps the client and server decoupled, making the API more flexible and easier to evolve over time.
+
+---
+
+### Part 2 — Room Management
+
+---
+
+**Q: What are the trade-offs of returning only IDs versus full room objects when listing rooms?**
+
+Returning only IDs reduces response size and network traffic, but forces the client to make additional requests to retrieve full details. Returning complete room objects increases initial bandwidth but provides everything in one round-trip, improving perceived performance and user experience. The right choice depends on how often clients need full details versus just the identifiers.
+
+---
+
+**Q: Is the DELETE operation idempotent in this implementation? What happens on repeated DELETE requests for the same room?**
+
+Yes, DELETE is idempotent. The first successful request returns `204 No Content` and removes the room. Subsequent identical requests return `404 Not Found` because the resource no longer exists. The server state does not change after the first deletion, satisfying the idempotency requirement — repeated calls produce the same end-state.
+
+---
+
+### Part 3 — Sensor Operations & Linking
+
+---
+
+**Q: What happens if a client sends data in the wrong format (e.g. `text/plain` instead of `application/json`) to a `@Consumes(APPLICATION_JSON)` endpoint?**
+
+JAX-RS intercepts the request before it reaches your method and rejects it immediately, returning `HTTP 415 Unsupported Media Type`. The `@Consumes` annotation acts as a gatekeeper — if the incoming `Content-Type` header doesn't match, the request is refused without any business logic executing.
+
+---
+
+**Q: Why is `@QueryParam` preferred over embedding filter values in the URL path (e.g. `/sensors/type/CO2`)?**
+
+URL path segments are designed to identify specific hierarchical resources. Query parameters are designed for optional modifiers like filters and sorts. Using path segments for filtering creates rigid route templates for every possible filter combination. Query parameters are flexible, optional, and composable — multiple filters can be stacked cleanly without multiplying route definitions.
+
+---
+
+### Part 4 — Deep Nesting with Sub-Resources
+
+---
+
+**Q: What are the architectural benefits of the Sub-Resource Locator pattern versus defining all nested paths in one large controller?**
+
+The Sub-Resource Locator pattern applies the Single Responsibility Principle — readings logic lives in `SensorReadingResource` rather than bloating `SensorResource`. Smaller, focused classes are easier to read, test, and maintain. The pattern also enables code reuse: the same sub-resource class can be referenced from multiple parent resources without duplicating logic.
+
+---
+
+### Part 5 — Error Handling, Exception Mapping & Logging
+
+---
+
+**Q: Why is `HTTP 422` more semantically accurate than `404` when a JSON payload references a non-existent resource?**
+
+`404 Not Found` signals that the endpoint URL itself doesn't exist. `422 Unprocessable Entity` signals that the URL is correct and the format is valid, but the data inside the request is logically invalid — for example, referencing a Room ID that doesn't exist in the database. Using 422 gives the client a much more precise error message about what actually went wrong.
+
+---
+
+**Q: What security risks come from exposing internal Java stack traces to external API consumers?**
+
+Stack traces can reveal the software framework, library versions, class names, and internal architecture of the application. Attackers can use this to look up known CVEs for specific versions and craft targeted exploits. A well-designed API should return only generic, user-safe error messages externally while logging the full trace internally — this is the purpose of custom exception mappers.
+
+---
+
+**Q: Why use JAX-RS filters for cross-cutting concerns like logging instead of adding `Logger.info()` calls to every resource method?**
+
+Filters centralize logging in one place, following the DRY (Don't Repeat Yourself) principle. Business logic stays clean and focused. All requests and responses are logged consistently in a uniform format without any risk of a developer forgetting to add a log statement. When the logging format needs to change, only one class needs updating.
+
+---
