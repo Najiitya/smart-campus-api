@@ -17,7 +17,7 @@ To build and run this project locally, please follow these steps:
    * In NetBeans: Click **Clean and Build** (or run `mvn clean package` in your terminal).
 4. Navigate to `src/main/java/com/coursework/Main.java`.
 5. Run the `Main.java` file. 
-6. The embedded Grizzly server will start. Look for the console message: `🚀 SMART CAMPUS SERVER IS RUNNING!`
+6. The embedded Grizzly server will start. Look for the console message: `SMART CAMPUS SERVER IS RUNNING!`
 7. The base API will be accessible at: `http://localhost:8080/api/v1/`
 
 ## 3. Sample Interactions (cURL Commands)
